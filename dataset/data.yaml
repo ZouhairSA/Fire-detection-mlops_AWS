@@ -1,13 +1,13 @@
-train: ../train/images
-val: ../valid/images
-test: ../test/images
+train: dataset/train/images
+val: dataset/valid/images
+test: dataset/test/images
 
 nc: 1
 names: ['fire']
 
-roboflow:
-  workspace: fire-detector
-  project: fire-dataset-final-2
-  version: 1
-  license: CC BY 4.0
-  url: https://universe.roboflow.com/fire-detector/fire-dataset-final-2/dataset/1
+# train: ../train/images
+# val: ../valid/images
+# test: ../test/images
+
+# nc: 1
+# names: ['fire']
