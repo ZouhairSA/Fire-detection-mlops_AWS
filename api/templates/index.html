@@ -1,4 +1,87 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fire Detection – YOLO</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1 class="title">🔥 Détection d’Incendie – IA YOLO</h1>
+    <p class="subtitle">Téléversez une image pour analyser la présence de feu</p>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+        <div class="upload-box" id="uploadBox">
+            <input type="file" name="image" id="imageInput" accept="image/*" onchange="previewImage(event)">
+            <p id="uploadText">Cliquez ici pour choisir une image</p>
+        </div>
+
+        <button type="submit" class="btn">Analyser</button>
+    </form>
+
+    <div id="previewContainer">
+        <h2>Aperçu :</h2>
+        <img id="previewImage" src="">
+    </div>
+
+    {% if results %}
+        <div class="result-box">
+
+            {% if results.error %}
+                <p class="error">{{ results.error }}</p>
+
+            {% elif results|length == 0 %}
+                <p class="no-fire">✔ Aucun feu détecté dans cette image</p>
+
+            {% else %}
+                <p class="fire-detected">🔥 Feu détecté avec succès !</p>
+
+                <ul>
+                    {% for r in results %}
+                        <li>Classe : <strong>{{ r.class }}</strong> — Confiance : <strong>{{ r.confidence }}</strong></li>
+                    {% endfor %}
+                </ul>
+
+                <h3>Image annotée :</h3>
+                <img src="/static/output.jpg" class="output-img">
+
+            {% endif %}
+
+        </div>
+    {% endif %}
+
+</div>
+
+
+<script>
+    function validateForm() {
+        const file = document.getElementById("imageInput").value;
+        if (!file) {
+            alert("Veuillez choisir une image avant d’analyser.");
+            return false;
+        }
+        return true;
+    }
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function(){
+            const img = document.getElementById("previewImage");
+            img.src = reader.result;
+            document.getElementById("previewContainer").style.display = "block";
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+</script>
+
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -37,4 +120,4 @@
     {% endif %}
 </div>
 </body>
-</html>
+</html> -->
