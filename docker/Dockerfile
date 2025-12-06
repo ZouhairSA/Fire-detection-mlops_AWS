@@ -1,34 +1,64 @@
 FROM python:3.10-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --timeout=1000 -r requirements.txt \
-    --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Copier API
 COPY api/ api/
-COPY model/ model/
-COPY templates/ templates/
-COPY static/ static/
 
-RUN mkdir -p static
+# Copier modèles
+COPY model/ model/
+
+# Copier templates HTML
+COPY api/templates/ api/templates/
 
 EXPOSE 5000
 
-RUN adduser --disabled-password --gecos '' appuser
-USER appuser
-
 CMD ["python", "api/app.py"]
+
+
+
+
+
+# FROM python:3.10-slim
+
+# ENV DEBIAN_FRONTEND=noninteractive
+# ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONUNBUFFERED=1
+
+# WORKDIR /app
+
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     libgl1 \
+#     libglib2.0-0 \
+#     && rm -rf /var/lib/apt/lists/*
+
+# COPY requirements.txt .
+
+# RUN pip install --no-cache-dir --timeout=1000 -r requirements.txt \
+#     --extra-index-url https://download.pytorch.org/whl/cpu
+
+# COPY api/ api/
+# COPY model/ model/
+# COPY templates/ templates/
+# COPY static/ static/
+
+# RUN mkdir -p static
+
+# EXPOSE 5000
+
+# RUN adduser --disabled-password --gecos '' appuser
+# USER appuser
+
+# CMD ["python", "api/app.py"]
 
 
 
