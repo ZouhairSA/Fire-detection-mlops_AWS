@@ -1,0 +1,22 @@
+# 1. Mettre à jour le système
+sudo yum update -y
+
+# 2. Installer Python 3 et pip si pas déjà présent
+sudo yum install python3 -y
+python3 --version
+pip3 --version
+
+# 3. Installer Git (si pas déjà installé)
+sudo yum install git -y
+
+# 4. Cloner ton repo (si pas déjà fait)
+git clone https://github.com/ZouhairSA/Fire-detection-mlops_AWS.git
+cd Fire-detection-mlops_AWS
+
+# 5. Créer un environnement virtuel
+python3 -m venv venv
+source venv/bin/activate
+
+# 6. Installer ultralytics pour YOLOv8
+pip install --upgrade pip
+pip install ultralytics

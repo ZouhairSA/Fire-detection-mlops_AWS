@@ -1,0 +1,15 @@
+flask==2.3.3
+ultralytics==8.2.103
+torch==2.3.1+cpu
+torchvision==0.18.1+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
+opencv-python-headless==4.10.0.84
+pillow==10.4.0
+gunicorn==22.0.0
+
+
+
+# flask
+# ultralytics
+# torch
+# opencv-python-headless
