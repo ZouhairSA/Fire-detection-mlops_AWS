@@ -1,107 +1,195 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FireVision Dashboard - Camera Fix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireVision Dashboard Pro</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
-<style>
-    #cameraContainer {
-        display: none;             /* Caché au début */
-        flex-direction: column;
-        align-items: center;
-        margin-top: 20px;
-    }
-    video {
-        width: 100%;
-        max-width: 500px;
-        border-radius: 10px;
-        border: 2px solid #444;
-    }
-    #capturedImage {
-        display: none;
-        max-width: 500px;
-        width: 100%;
-        border-radius: 10px;
-        margin-top: 10px;
-    }
-</style>
-
+    <style>
+        body {
+            background: #0d1117;
+            color: white;
+        }
+        .upload-box {
+            border: 2px dashed #6c757d;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .preview-img {
+            width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+        .delete-icon {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            color: red;
+            cursor: pointer;
+            display: none;
+        }
+        #preview-container {
+            position: relative;
+            display: none;
+        }
+        /* Camera popup */
+        #cameraModal {
+            display:none;
+            position:fixed;
+            top:0; left:0;
+            width:100%; height:100%;
+            background:rgba(0,0,0,.85);
+            padding-top:50px;
+            text-align:center;
+            z-index:9999;
+        }
+        #cameraStream {
+            width:90%;
+            max-width:450px;
+            border-radius:10px;
+        }
+    </style>
 </head>
-<body class="p-4 bg-dark text-white">
 
-<h2 class="text-center mb-4">📸 Test Caméra – FireVision</h2>
+<body>
+<div class="container py-5">
+    <h2 class="text-center mb-4">🔥 FireVision</h2>
 
-<div class="text-center">
-    <button id="openCameraBtn" class="btn btn-primary">
-        <i class="bi bi-camera-fill"></i> Ouvrir la Caméra
-    </button>
+    <form method="POST" enctype="multipart/form-data">
 
-    <button id="deleteImageBtn" class="btn btn-danger ms-2" style="display:none;">
-        <i class="bi bi-trash-fill"></i> Supprimer
-    </button>
+        <!-- Upload Box -->
+        <label class="upload-box w-100" id="uploadArea">
+            <i class="bi bi-cloud-upload fs-1"></i>
+            <p>Cliquez pour choisir une image</p>
+            <input type="file" name="image" id="imageInput" accept="image/*" hidden>
+        </label>
+
+        <!-- Bouton Caméra -->
+        <button type="button" class="btn btn-secondary w-100 mt-3" onclick="openCamera()">
+            📷 Prendre une photo
+        </button>
+
+        <!-- Preview -->
+        <div id="preview-container">
+            <i class="bi bi-x-circle delete-icon" id="deleteImage" onclick="removeImage()"></i>
+            <img id="preview" class="preview-img">
+        </div>
+
+        <!-- Caméra Modal -->
+        <div id="cameraModal">
+            <video id="cameraStream" autoplay playsinline></video>
+
+            <br><br>
+            <button type="button" class="btn btn-success" onclick="capturePhoto()">📸 Capturer</button>
+            <button type="button" class="btn btn-danger" onclick="closeCamera()">❌ Fermer</button>
+
+            <canvas id="cameraCanvas" style="display:none;"></canvas>
+        </div>
+
+        <!-- Hidden input for base64 -->
+        <input type="hidden" name="camera_image" id="camera_image">
+
+        <button class="btn btn-primary w-100 mt-3">Analyser</button>
+
+    </form>
+
+    {% if annotated %}
+        <h3 class="mt-5">📊 Résultat :</h3>
+        <img src="{{ annotated }}" class="img-fluid mt-3">
+
+        <a href="/download_pdf?results={{ results }}&image={{ image_path }}"
+           class="btn btn-warning w-100 mt-4">
+            📄 Télécharger le rapport PDF
+        </a>
+    {% endif %}
+
 </div>
-
-<div id="cameraContainer" class="d-flex">
-    <video id="video" autoplay playsinline></video>
-
-    <button id="captureBtn" class="btn btn-success mt-3">
-        <i class="bi bi-check2-circle"></i> Capturer
-    </button>
-
-    <img id="capturedImage" alt="Photo capturée">
-</div>
-
 
 <script>
-    const openCameraBtn = document.getElementById("openCameraBtn");
-    const cameraContainer = document.getElementById("cameraContainer");
-    const video = document.getElementById("video");
-    const captureBtn = document.getElementById("captureBtn");
-    const capturedImage = document.getElementById("capturedImage");
-    const deleteImageBtn = document.getElementById("deleteImageBtn");
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const previewContainer = document.getElementById("preview-container");
+    const deleteIcon = document.getElementById("deleteImage");
 
-    let stream;
+    // Upload
+    document.getElementById("uploadArea").onclick = () => imageInput.click();
 
-    // 📌 OUVRIR LA CAMERA
-    openCameraBtn.addEventListener("click", async () => {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }   // Caméra arrière si dispo
-            });
-
-            video.srcObject = stream;
-            cameraContainer.style.display = "flex";
-            capturedImage.style.display = "none";
-            deleteImageBtn.style.display = "none";
-
-        } catch (err) {
-            alert("❌ Erreur accès à la caméra : " + err.message);
+    imageInput.addEventListener("change", function() {
+        if (this.files && this.files[0]) {
+            let imgUrl = URL.createObjectURL(this.files[0]);
+            showPreview(imgUrl);
         }
     });
 
-    // 📌 CAPTURER LA PHOTO
-    captureBtn.addEventListener("click", () => {
-        const canvas = document.createElement("canvas");
+    function showPreview(src) {
+        preview.src = src;
+        previewContainer.style.display = "block";
+        deleteIcon.style.display = "block";
+    }
+
+    function removeImage() {
+        imageInput.value = "";
+        previewContainer.style.display = "none";
+        preview.src = "";
+        deleteIcon.style.display = "none";
+        document.getElementById("camera_image").value = "";
+    }
+
+    // -----------------------
+    // CAMERA SYSTEM FIXED
+    // -----------------------
+
+    let stream;
+
+    function openCamera() {
+        document.getElementById("cameraModal").style.display = "block";
+
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment"  // Utilise la caméra arrière mobile
+            }
+        })
+        .then(s => {
+            stream = s;
+            document.getElementById("cameraStream").srcObject = stream;
+        })
+        .catch(err => {
+            alert("⚠️ Autorisez la caméra !\n" + err);
+            closeCamera();
+        });
+    }
+
+    function capturePhoto() {
+        let video = document.getElementById("cameraStream");
+        let canvas = document.getElementById("cameraCanvas");
+
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
 
-        canvas.getContext("2d").drawImage(video, 0, 0);
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
 
-        capturedImage.src = canvas.toDataURL("image/png");
-        capturedImage.style.display = "block";
-        deleteImageBtn.style.display = "inline-block";
-    });
+        let dataURL = canvas.toDataURL("image/png");
 
-    // 📌 SUPPRIMER L’IMAGE
-    deleteImageBtn.addEventListener("click", () => {
-        capturedImage.src = "";
-        capturedImage.style.display = "none";
-        deleteImageBtn.style.display = "none";
-    });
+        document.getElementById("camera_image").value = dataURL;
+
+        showPreview(dataURL);
+        closeCamera();
+    }
+
+    function closeCamera() {
+        document.getElementById("cameraModal").style.display = "none";
+        if (stream) stream.getTracks().forEach(t => t.stop());
+    }
 </script>
 
 </body>
