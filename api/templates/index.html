@@ -1,110 +1,144 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>🔥 Fire Detection – YOLO AI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🔥 Détection d’Incendie – IA YOLO</title>
 
     <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
         body {
-            background: linear-gradient(135deg, #1a1a1a, #333);
-            color: #fff;
-            font-family: "Poppins", sans-serif;
+            background: linear-gradient(135deg, #0d1117, #1b1f24);
+            color: white;
+            min-height: 100vh;
+            padding-top: 40px;
         }
-        .container-box {
-            background: #222;
-            padding: 35px;
+
+        .app-container {
+            max-width: 850px;
+            margin: auto;
+            padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 0 25px rgba(255, 89, 0, 0.3);
-            max-width: 650px;
-            margin-top: 60px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(255, 100, 0, 0.3);
+            animation: fadeIn 0.9s ease-in-out;
         }
-        .btn-upload {
-            background: #ff6a00;
-            color: #fff;
-            border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 17px;
-            font-weight: 600;
-            box-shadow: 0 0 15px rgba(255, 89, 0, 0.4);
+
+        .upload-box {
+            border: 2px dashed #ff7b00;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
             transition: 0.3s;
         }
-        .btn-upload:hover {
-            background: #ff7f24;
-            transform: scale(1.05);
+
+        .upload-box:hover {
+            background: rgba(255, 120, 0, 0.12);
+            transform: scale(1.02);
         }
-        #preview-img {
-            display: none;
-            width: 100%;
+
+        .preview-img {
+            max-width: 100%;
             border-radius: 15px;
             margin-top: 20px;
+            display: none;
         }
-        .result-box {
-            margin-top: 25px;
+
+        .result-card {
+            background: #161b22;
             padding: 20px;
             border-radius: 15px;
-            font-size: 18px;
-            font-weight: 500;
+            margin-top: 20px;
+            border-left: 4px solid #ff7b00;
+            animation: slideUp 0.5s ease-out;
         }
-        .success { background: rgba(30, 200, 70, 0.2); border: 1px solid #2ecc71; }
-        .danger { background: rgba(255, 50, 50, 0.2); border: 1px solid #ff4d4d; }
-        .no-fire { background: rgba(150, 150, 150, 0.2); border: 1px solid #aaa; }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(20px);}
+            to   {opacity: 1; transform: translateY(0);}
+        }
+
+        @keyframes slideUp {
+            from {opacity: 0; transform: translateY(10px);}
+            to   {opacity: 1; transform: translateY(0);}
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container d-flex justify-content-center">
-    <div class="container-box text-center">
+<div class="app-container">
 
-        <h1 class="mb-3">🔥 Détection d’Incendie – IA YOLO</h1>
-        <p class="text-muted">Téléversez une image et notre modèle IA analysera automatiquement la présence de feu.</p>
+    <h1 class="text-center mb-3">
+        🔥 <b>Détection d’incendie IA</b>  
+    </h1>
+    <p class="text-center text-white-50 mb-4">
+        Analyse automatique avec YOLO — Détection rapide et précise du feu
+    </p>
 
-        <!-- Upload Form -->
-        <form method="POST" enctype="multipart/form-data">
-            <label for="img-upload" class="btn btn-upload mb-3">Choisir une image</label>
-            <input id="img-upload" type="file" name="image" accept="image/*" onchange="previewImage(event)" style="display:none;">
+    <!-- FORMULAIRE -->
+    <form method="POST" enctype="multipart/form-data">
 
-            <br>
-            <button type="submit" class="btn btn-primary mt-2" style="border-radius:50px; padding:10px 25px; font-size:18px;">Analyser 🔍</button>
-        </form>
+        <label class="upload-box" id="uploadBox">
+            <i class="bi bi-cloud-arrow-up fs-1 text-warning"></i>
+            <h5 class="mt-3">Cliquez ici pour importer une image</h5>
+            <p class="text-white-50 mb-0">Formats supportés : JPG, PNG</p>
+            <input type="file" name="image" id="imageInput" class="d-none" accept="image/*" required>
+        </label>
 
-        <!-- Preview Image -->
-        <img id="preview-img" />
+        <img id="previewImage" class="preview-img">
 
-        <!-- Results -->
-        {% if results %}
+        <button class="btn btn-warning w-100 mt-4 py-2 fs-5">
+            🚀 Analyser l'image
+        </button>
+    </form>
+
+    <!-- RESULTATS -->
+    {% if results %}
+        <div class="result-card">
+            <h4 class="mb-3"><i class="bi bi-fire text-warning"></i> Résultat de l'analyse</h4>
+
             {% if results[0].error %}
-                <div class="result-box danger mt-4">⚠️ {{ results[0].error }}</div>
-            {% else %}
-                {% if results|length == 0 %}
-                    <div class="result-box no-fire">🌫️ Aucun feu détecté dans l’image.</div>
-                {% else %}
-                    <div class="result-box success">
-                        🔥 <strong>Feu détecté !</strong><br>
-                        Confiance : <strong>{{ results[0].confidence }}</strong>
-                    </div>
-                {% endif %}
-            {% endif %}
-        {% endif %}
+                <p class="text-danger">{{ results[0].error }}</p>
 
-    </div>
+            {% elif results|length == 0 %}
+                <p class="text-info"><b>Aucun feu détecté.</b> L’image est sûre.</p>
+
+            {% else %}
+                {% for r in results %}
+                    <p class="mb-1">
+                        🔥 <b>Feu détecté</b> — Confiance : 
+                        <span class="text-warning">{{ r.confidence * 100 }}%</span>
+                    </p>
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+
 </div>
 
+<!-- JS Preview -->
 <script>
-    function previewImage(event) {
-        let img = document.getElementById("preview-img");
-        img.src = URL.createObjectURL(event.target.files[0]);
-        img.style.display = "block";
-    }
+    const input = document.getElementById("imageInput");
+    const preview = document.getElementById("previewImage");
+
+    input.addEventListener("change", () => {
+        const file = input.files[0];
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+    });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-    
+
 
 <!-- <!DOCTYPE html>
 <html lang="en">
