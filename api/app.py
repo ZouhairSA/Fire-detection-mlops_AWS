@@ -13,9 +13,8 @@ model_path = os.path.abspath(os.path.join(BASE_DIR, "../model/best.pt"))
 print("MODEL PATH =", model_path)
 print("EXISTS =", os.path.exists(model_path))
 
-# Charger le modèle YOLO
-# device="cpu" évite les erreurs CUDA sur EC2
-model = YOLO(model_path, device="cpu")
+# CORRIGÉ : plus de device= dans le constructeur ! (Ultralytics 8.2+)
+model = YOLO(model_path)
 
 
 # -------------------------------------------------------------------
@@ -29,20 +28,19 @@ def index():
     if request.method == "POST":
         if "image" not in request.files:
             result_data = {"error": "No image uploaded"}
-
         else:
             file = request.files["image"]
-
-            image_path = "static/input.jpg"
+            # Chemin absolu dans le conteneur
+            image_path = "/app/static/input.jpg"
             file.save(image_path)
 
-            result = model(image_path)[0]
-            detections = []
+            # CORRIGÉ : device="cpu" passé ici, à l'inférence
+            result = model(image_path, device="cpu")[0]
 
+            detections = []
             for box in result.boxes:
                 cls = int(box.cls[0])
                 conf = float(box.conf[0])
-
                 detections.append({
                     "class": result.names[cls],
                     "confidence": round(conf, 3)
@@ -53,7 +51,7 @@ def index():
     return render_template(
         "index.html",
         results=result_data,
-        image_path=image_path
+        image_path="static/input.jpg"  # Flask sert automatiquement /static/
     )
 
 
@@ -61,9 +59,8 @@ def index():
 # Lancer l'application
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-    os.makedirs("static", exist_ok=True)
-    app.run(host="0.0.0.0", port=5000)
-
+    os.makedirs("/app/static", exist_ok=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
 
 
 # from flask import Flask, request, render_template
