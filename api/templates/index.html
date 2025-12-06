@@ -2,106 +2,44 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>🔥 FireVision Dashboard Pro</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-
+<title>🔥 Fire Detection</title>
 <style>
-body{
+body {
     background:#000;
     color:white;
-    font-family:Poppins;
+    font-family:Arial;
 }
-
-/* Sidebar */
-.sidebar{
-    width:260px;
-    height:100vh;
-    background:rgba(255,255,255,0.05);
-    border-right:1px solid rgba(255,255,255,0.1);
-    position:fixed;
-    padding:20px;
-}
-
-.sidebar a{
-    display:block;
-    color:white !important;
-    padding:10px;
+.preview-img {
+    max-width:400px;
     border-radius:10px;
-    text-decoration:none;
+    margin-top:10px;
 }
-
-.sidebar a:hover{
-    background:rgba(255,123,0,0.2);
+button {
+    padding:10px;
+    background:orange;
+    border:none;
+    border-radius:8px;
 }
-
-.main{
-    margin-left:280px;
-    padding:30px;
-}
-
-.card{
-    background:rgba(255,255,255,0.08);
-    border:1px solid rgba(255,255,255,0.1);
-}
-
-.upload-box{
-    border:2px dashed orange;
-    padding:40px;
-    border-radius:20px;
-    text-align:center;
-}
-
-.preview-img{
-    margin-top:20px;
-    border-radius:15px;
-}
-
-/* sections */
-.section{ display:none; }
-.section.active{ display:block; }
-
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-    <h3 class="text-warning mb-3"><i class="bi bi-fire"></i> FireVision</h3>
-    <a href="#" onclick="show('analyse')"><i class="bi bi-house"></i> Analyse</a>
-    <a href="#" onclick="show('rapport')"><i class="bi bi-file-earmark-text"></i> Rapport</a>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-<!-- ANALYSE -->
-<div id="analyse" class="section active">
-
-<h2>🔥 Analyse d’incendie</h2>
+<h2>🔥 Détection d’incendie YOLO</h2>
 
 <form method="POST" enctype="multipart/form-data">
-
-    <label class="upload-box">
-        <i class="bi bi-cloud-arrow-up fs-1 text-warning"></i>
-        <h5>Importer une image</h5>
-        <input type="file" name="image" accept="image/*" required class="d-none" id="imageInput">
-    </label>
-
-    <img id="previewImage" class="preview-img">
-
-    <button class="btn btn-warning w-100 mt-3">Analyser</button>
+    <input type="file" name="image" required>
+    <br><br>
+    <button type="submit">Analyser</button>
 </form>
 
 {% if results %}
-<div class="card p-3 mt-3">
 
-<h5>Résultat</h5>
+<hr>
+
+<h3>✅ Résultat</h3>
 
 {% if results[0].error %}
-<p class="text-danger">{{ results[0].error }}</p>
+<p>{{ results[0].error }}</p>
 {% elif results|length == 0 %}
 <p>Aucun feu détecté.</p>
 {% else %}
@@ -110,53 +48,24 @@ body{
 {% endfor %}
 {% endif %}
 
-<a class="btn btn-outline-warning w-100 mt-2"
-   href="/download_pdf?results={{results}}&image={{image_path}}">
-📄 Télécharger rapport PDF
-</a>
-
-</div>
+<!-- image originale -->
+{% if image_path %}
+<h4>Image originale</h4>
+<img src="{{ image_path }}" class="preview-img">
 {% endif %}
 
-</div>
+<!-- image annotée -->
+{% if annotated %}
+<h4>Image annotée</h4>
+<img src="{{ annotated }}" class="preview-img">
+{% endif %}
 
-<!-- RAPPORT -->
-<div id="rapport" class="section">
+<br><br>
+<a href="/download_pdf?results={{results}}&image=input.jpg">
+    📄 Télécharger rapport PDF
+</a>
 
-<h2>📄 Rapport du projet</h2>
-<p>
-Ce rapport décrit le fonctionnement de FireVision, un système IA de détection
-d’incendie basé sur YOLOv8. Le modèle identifie automatiquement les zones de feu
-dans les images et fournit un niveau de confiance.
-</p>
-
-<ul>
-<li>📌 Détection temps réel</li>
-<li>📌 Haute précision</li>
-<li>📌 Interface Web moderne</li>
-<li>📌 Export PDF</li>
-</ul>
-
-</div>
-
-</div>
-
-<script>
-function show(id){
-    document.querySelectorAll('.section')
-        .forEach(s => s.classList.remove('active'));
-
-    document.getElementById(id).classList.add('active');
-}
-
-const input=document.getElementById("imageInput");
-const preview=document.getElementById("previewImage");
-
-input.addEventListener("change",()=>{
-    preview.src = URL.createObjectURL(input.files[0]);
-    preview.style.display="block";
-});
-</script>
+{% endif %}
 
 </body>
 </html>

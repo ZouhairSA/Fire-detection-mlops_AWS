@@ -1,99 +1,106 @@
 from flask import Flask, send_file, request, render_template
-
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from datetime import datetime
-
 from ultralytics import YOLO
 import os
 
 app = Flask(__name__)
 
-# -------------------------------------------------------------------
-# Chemin absolu du modèle (fonctionne PC / Docker / EC2)
-# -------------------------------------------------------------------
+# ----------------------------------------------------------
+# Chargement du modèle
+# ----------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.abspath(os.path.join(BASE_DIR, "../model/best.pt"))
 
 print("MODEL PATH =", model_path)
 print("EXISTS =", os.path.exists(model_path))
 
-# Charger le modèle (NE PAS mettre device ici)
 model = YOLO(model_path)
 
-
-# -------------------------------------------------------------------
-# Route principale
-# -------------------------------------------------------------------
+# ----------------------------------------------------------
+# ROUTE PRINCIPALE
+# ----------------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
+
     result_data = None
     image_path = None
+    annotated = None
 
     if request.method == "POST":
-        # Cas : aucun fichier
-        if "image" not in request.files:
-            result_data = {"error": "No image uploaded"}
 
+        if "image" not in request.files:
+            result_data = [{"error": "No image uploaded"}]
         else:
+
             file = request.files["image"]
 
-            # Chemin absolu dans Docker/EC2
+            # chemins
             image_path = "/app/static/input.jpg"
+            annotated = "/app/static/annotated.jpg"
+
+            os.makedirs("/app/static", exist_ok=True)
+
+            # sauvegarde image
             file.save(image_path)
 
-            # Inférence YOLO (device CPU ici)
+            # YOLO inference
             result = model(image_path, device="cpu")[0]
 
+            # sauvegarder image annotée
+            result.save(annotated)
+
+            # collecte résultats
             detections = []
+
             for box in result.boxes:
                 cls = int(box.cls[0])
                 conf = float(box.conf[0])
 
                 detections.append({
                     "class": result.names[cls],
-                    "confidence": round(conf, 3)
+                    "confidence": round(conf,3)
                 })
 
-            result_data = detections  # [], ou liste avec feu
+            result_data = detections
 
-    # Flask sert /static automatiquement sans chemin absolu
     return render_template(
         "index.html",
         results=result_data,
-        image_path="static/input.jpg"
+        image_path="static/input.jpg",
+        annotated="static/annotated.jpg"
     )
+
+
+# ----------------------------------------------------------
+# PDF
+# ----------------------------------------------------------
 @app.route("/download_pdf")
 def download_pdf():
-    # PDF TEMPORAIRE
-    pdf_path = "/app/static/result.pdf"
 
-    # Données
-    results = request.args.get("results", "")
-    image_name = request.args.get("image", "input.jpg")
+    pdf = "/app/static/result.pdf"
+
+    results = request.args.get("results","")
+    image = request.args.get("image","input.jpg")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Génération PDF
-    c = canvas.Canvas(pdf_path, pagesize=A4)
+    c = canvas.Canvas(pdf, pagesize=A4)
 
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(120, 800, "🔥 Rapport Détection d'Incendie")
+    c.drawString(50,800,"Rapport FireVision")
+    c.drawString(50,770,"Date : "+now)
+    c.drawString(50,750,"Image : "+image)
 
-    c.setFont("Helvetica", 12)
-    c.drawString(50, 760, f"Date : {now}")
-    c.drawString(50, 740, f"Image analysée : {image_name}")
+    c.drawString(50,720,"Résultat : ")
+    c.drawString(50,700,results)
 
-    c.drawString(50, 700, "Résultat de l'analyse :")
-    c.drawString(70, 680, results)
-
-    c.showPage()
     c.save()
+    return send_file(pdf, as_attachment=True)
 
-    return send_file(pdf_path, as_attachment=True)
 
-# -------------------------------------------------------------------
-# Lancer l'application
-# -------------------------------------------------------------------
+# ----------------------------------------------------------
+# RUN
+# ----------------------------------------------------------
 if __name__ == "__main__":
     os.makedirs("/app/static", exist_ok=True)
     app.run(host="0.0.0.0", port=5000, debug=False)
