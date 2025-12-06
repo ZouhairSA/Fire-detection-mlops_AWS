@@ -3,13 +3,13 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from datetime import datetime
 from ultralytics import YOLO
-import os
+import os, base64
 
 app = Flask(__name__)
 
-# ----------------------------------------------------------
-# Chargement du modèle
-# ----------------------------------------------------------
+# -------------------------------------------------------------------
+# LOAD YOLO MODEL
+# -------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.abspath(os.path.join(BASE_DIR, "../model/best.pt"))
 
@@ -18,92 +18,122 @@ print("EXISTS =", os.path.exists(model_path))
 
 model = YOLO(model_path)
 
-# ----------------------------------------------------------
-# ROUTE PRINCIPALE
-# ----------------------------------------------------------
+
+# -------------------------------------------------------------------
+# MAIN ROUTE
+# -------------------------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
 
     result_data = None
     image_path = None
-    annotated = None
+    annotated_path = None
+
+    # dossier static
+    STATIC_DIR = os.path.join(BASE_DIR, "static")
+    os.makedirs(STATIC_DIR, exist_ok=True)
+
+    input_path = os.path.join(STATIC_DIR, "input.jpg")
+    annotated_path = os.path.join(STATIC_DIR, "annotated.jpg")
 
     if request.method == "POST":
 
-        if "image" not in request.files:
-            result_data = [{"error": "No image uploaded"}]
-        else:
-
+        # ----------------------------------------------------------
+        # 1️⃣ Vérifier si l'image vient de l'UPLOAD
+        # ----------------------------------------------------------
+        if "image" in request.files and request.files["image"].filename != "":
             file = request.files["image"]
+            file.save(input_path)
+            image_path = "static/input.jpg"
 
-            # chemins
-            image_path = "/app/static/input.jpg"
-            annotated = "/app/static/annotated.jpg"
+        # ----------------------------------------------------------
+        # 2️⃣ Vérifier si l'image vient de la CAMÉRA (base64)
+        # ----------------------------------------------------------
+        else:
+            camera_data = request.form.get("camera_image", "")
 
-            os.makedirs("/app/static", exist_ok=True)
+            if camera_data.startswith("data:image"):
+                header, encoded = camera_data.split(",", 1)
+                decoded = base64.b64decode(encoded)
 
-            # sauvegarde image
-            file.save(image_path)
+                with open(input_path, "wb") as f:
+                    f.write(decoded)
 
-            # YOLO inference
-            result = model(image_path, device="cpu")[0]
+                image_path = "static/input.jpg"
+            else:
+                result_data = [{"error": "Aucune image reçue"}]
+                return render_template(
+                    "index.html",
+                    results=result_data,
+                    image_path=None,
+                    annotated=None
+                )
 
-            # sauvegarder image annotée
-            result.save(annotated)
+        # ----------------------------------------------------------
+        # YOLO INFERENCE
+        # ----------------------------------------------------------
+        result = model(input_path, device="cpu")[0]
 
-            # collecte résultats
-            detections = []
+        # sauvegarder l'image annotée
+        result.save(annotated_path)
 
-            for box in result.boxes:
-                cls = int(box.cls[0])
-                conf = float(box.conf[0])
+        # extraire toutes les détections
+        detections = []
 
-                detections.append({
-                    "class": result.names[cls],
-                    "confidence": round(conf,3)
-                })
+        for box in result.boxes:
+            cls = int(box.cls[0])
+            conf = float(box.conf[0])
 
-            result_data = detections
+            detections.append({
+                "class": result.names[cls],
+                "confidence": round(conf, 3)
+            })
+
+        result_data = detections
 
     return render_template(
         "index.html",
         results=result_data,
-        image_path="static/input.jpg",
-        annotated="static/annotated.jpg"
+        image_path="static/input.jpg" if os.path.exists(input_path) else None,
+        annotated="static/annotated.jpg" if os.path.exists(annotated_path) else None
     )
 
 
-# ----------------------------------------------------------
-# PDF
-# ----------------------------------------------------------
+# -------------------------------------------------------------------
+# PDF GENERATION
+# -------------------------------------------------------------------
 @app.route("/download_pdf")
 def download_pdf():
 
-    pdf = "/app/static/result.pdf"
+    STATIC_DIR = os.path.join(BASE_DIR, "static")
+    os.makedirs(STATIC_DIR, exist_ok=True)
 
-    results = request.args.get("results","")
-    image = request.args.get("image","input.jpg")
+    pdf_path = os.path.join(STATIC_DIR, "result.pdf")
+
+    results = request.args.get("results", "")
+    image = request.args.get("image", "input.jpg")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    c = canvas.Canvas(pdf, pagesize=A4)
+    c = canvas.Canvas(pdf_path, pagesize=A4)
 
-    c.drawString(50,800,"Rapport FireVision")
-    c.drawString(50,770,"Date : "+now)
-    c.drawString(50,750,"Image : "+image)
+    c.drawString(50, 800, "Rapport FireVision")
+    c.drawString(50, 770, "Date : " + now)
+    c.drawString(50, 750, "Image : " + image)
 
-    c.drawString(50,720,"Résultat : ")
-    c.drawString(50,700,results)
+    c.drawString(50, 720, "Résultats :")
+    c.drawString(50, 700, results)
 
     c.save()
-    return send_file(pdf, as_attachment=True)
+
+    return send_file(pdf_path, as_attachment=True)
 
 
-# ----------------------------------------------------------
-# RUN
-# ----------------------------------------------------------
+# -------------------------------------------------------------------
+# RUN SERVER
+# -------------------------------------------------------------------
 if __name__ == "__main__":
-    os.makedirs("/app/static", exist_ok=True)
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    os.makedirs(os.path.join(BASE_DIR, "static"), exist_ok=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
 # -------------------------------------------------------------------------------------------------------------------
 
