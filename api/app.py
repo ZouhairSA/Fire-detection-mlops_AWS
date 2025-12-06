@@ -4,15 +4,13 @@ import os
 
 app = Flask(__name__)
 
-# ========== CHEMIN MODELE ==========
-BASE_DIR = os.path.dirname(__file__)
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
-model_path = os.path.join(PROJECT_ROOT, "model", "best.pt")
+# chemin du modèle
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.abspath(os.path.join(BASE_DIR, "../model/best.pt"))
 
-print("MODEL PATH =", model_path)
+# load
+model = YOLO(model_path, device="cpu")
 
-model = YOLO(model_path)
-# ===================================
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -20,19 +18,20 @@ def index():
     image_path = None
 
     if request.method == "POST":
-        if 'image' not in request.files:
+        if "image" not in request.files:
             result_data = {"error": "No image uploaded"}
         else:
-            file = request.files['image']
+            file = request.files["image"]
             image_path = "static/input.jpg"
             file.save(image_path)
 
             result = model(image_path)[0]
-
             detections = []
+
             for box in result.boxes:
                 cls = int(box.cls[0])
                 conf = float(box.conf[0])
+
                 detections.append({
                     "class": result.names[cls],
                     "confidence": round(conf, 3)
@@ -40,12 +39,14 @@ def index():
 
             result_data = detections
 
-    return render_template("index.html", results=result_data,
+    return render_template("index.html",
+                           results=result_data,
                            image_path=image_path)
+
 
 if __name__ == "__main__":
     os.makedirs("static", exist_ok=True)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
 
 
 
