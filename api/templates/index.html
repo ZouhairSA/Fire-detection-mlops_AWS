@@ -1,82 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Fire Detection – YOLO</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🔥 Détection d'Incendie — Mini ChatGPT</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
+  <main class="container">
+    <header class="hero">
+      <h1>🔥 Détection d’Incendie — IA (YOLO)</h1>
+      <p>Téléversez une image pour analyser la présence de feu</p>
+    </header>
 
-<div class="container">
+    <section class="uploader">
+      <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <div class="file-row">
+          <!-- Input file caché + label cliquable -->
+          <input id="fileInput" name="image" type="file" accept="image/*" hidden>
+          <button type="button" id="pickBtn" class="btn">Cliquez ici pour choisir une image</button>
 
-    <h1 class="title">🔥 Détection d’Incendie – IA YOLO</h1>
-    <p class="subtitle">Téléversez une image pour analyser la présence de feu</p>
-
-    <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-        <div class="upload-box" id="uploadBox">
-            <input type="file" name="image" id="imageInput" accept="image/*" onchange="previewImage(event)">
-            <p id="uploadText">Cliquez ici pour choisir une image</p>
+          <!-- Bouton pour lancer l'analyse -->
+          <button type="submit" id="analyzeBtn" class="btn primary" disabled>Analyser</button>
         </div>
 
-        <button type="submit" class="btn">Analyser</button>
-    </form>
+        <!-- Preview -->
+        <div id="previewWrap" class="preview hidden">
+          <img id="previewImg" src="" alt="Preview" />
+          <p id="previewName"></p>
+        </div>
 
-    <div id="previewContainer">
-        <h2>Aperçu :</h2>
-        <img id="previewImage" src="">
-    </div>
-
-    {% if results %}
-        <div class="result-box">
-
-            {% if results.error %}
-                <p class="error">{{ results.error }}</p>
-
-            {% elif results|length == 0 %}
-                <p class="no-fire">✔ Aucun feu détecté dans cette image</p>
-
+        <!-- Message de statut renvoyé par Flask (render_template passes `results` et `image_path`) -->
+        <div id="resultWrap" class="result">
+          {% if results %}
+            {% if results|length == 0 %}
+              <div class="no-fire">✅ Aucun feu détecté.</div>
             {% else %}
-                <p class="fire-detected">🔥 Feu détecté avec succès !</p>
-
+              <div class="found">
+                <h3>⚠️ Feu détecté</h3>
                 <ul>
-                    {% for r in results %}
-                        <li>Classe : <strong>{{ r.class }}</strong> — Confiance : <strong>{{ r.confidence }}</strong></li>
-                    {% endfor %}
+                {% for d in results %}
+                  <li>{{ d.class }} — confiance : {{ d.confidence }}</li>
+                {% endfor %}
                 </ul>
-
-                <h3>Image annotée :</h3>
-                <img src="/static/output.jpg" class="output-img">
-
+                {% if image_path %}
+                  <div class="out-image">
+                    <p>Image analysée :</p>
+                    <img src="{{ url_for('static', filename='input.jpg') }}" alt="Analysed image" />
+                  </div>
+                {% endif %}
+              </div>
             {% endif %}
-
+          {% elif results is not none and results=={'error':'No image uploaded'} %}
+            <div class="error">⚠️ Aucun fichier sélectionné. Choisissez une image d'abord.</div>
+          {% endif %}
         </div>
-    {% endif %}
+      </form>
+    </section>
 
-</div>
-
+    <footer class="foot">
+      <small>Projet MLOps — Fire Detection • Zouhair & Ibtihal</small>
+    </footer>
+  </main>
 
 <script>
-    function validateForm() {
-        const file = document.getElementById("imageInput").value;
-        if (!file) {
-            alert("Veuillez choisir une image avant d’analyser.");
-            return false;
-        }
-        return true;
-    }
+  // JS minimal pour déclencher l'input, preview et activer le bouton Analyser
+  const pickBtn = document.getElementById('pickBtn');
+  const fileInput = document.getElementById('fileInput');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const previewWrap = document.getElementById('previewWrap');
+  const previewImg = document.getElementById('previewImg');
+  const previewName = document.getElementById('previewName');
 
-    function previewImage(event) {
-        const reader = new FileReader();
-        reader.onload = function(){
-            const img = document.getElementById("previewImage");
-            img.src = reader.result;
-            document.getElementById("previewContainer").style.display = "block";
-        }
-        reader.readAsDataURL(event.target.files[0]);
+  pickBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      previewWrap.classList.add('hidden');
+      analyzeBtn.disabled = true;
+      return;
     }
+    // Affiche preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewName.textContent = file.name;
+      previewWrap.classList.remove('hidden');
+      analyzeBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Si utilisateur clique sur Analyser sans fichier — on protège
+  document.getElementById('uploadForm').addEventListener('submit', (e) => {
+    if (!fileInput.files || fileInput.files.length === 0) {
+      e.preventDefault();
+      alert("Choisissez d'abord une image avant d'analyser.");
+    } else {
+      // laisse le form se soumettre en POST vers Flask
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = "Analyse en cours...";
+    }
+  });
 </script>
-
 </body>
 </html>
 
