@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>🔥 Détection d’Incendie – IA YOLO</title>
 
-    <!-- Bootstrap 5 -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Icons -->
@@ -16,7 +16,13 @@
             background: linear-gradient(135deg, #0d1117, #1b1f24);
             color: white;
             min-height: 100vh;
-            padding-top: 40px;
+            padding-top: 80px;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(10px);
         }
 
         .app-container {
@@ -38,7 +44,6 @@
             cursor: pointer;
             transition: 0.3s;
         }
-
         .upload-box:hover {
             background: rgba(255, 120, 0, 0.12);
             transform: scale(1.02);
@@ -60,11 +65,18 @@
             animation: slideUp 0.5s ease-out;
         }
 
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
         @keyframes fadeIn {
             from {opacity: 0; transform: translateY(20px);}
             to   {opacity: 1; transform: translateY(0);}
         }
-
         @keyframes slideUp {
             from {opacity: 0; transform: translateY(10px);}
             to   {opacity: 1; transform: translateY(0);}
@@ -74,13 +86,21 @@
 
 <body>
 
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark fixed-top px-4">
+    <a class="navbar-brand fw-bold text-warning" href="#">
+        <i class="bi bi-fire"></i> FireVision AI
+    </a>
+</nav>
+
+
 <div class="app-container">
 
     <h1 class="text-center mb-3">
-        🔥 <b>Détection d’incendie IA</b>  
+        🔥 <b>Détection d’incendie IA</b>
     </h1>
     <p class="text-center text-white-50 mb-4">
-        Analyse automatique avec YOLO — Détection rapide et précise du feu
+        Analyse automatique avec YOLO — Rapide et ultra précis
     </p>
 
     <!-- FORMULAIRE -->
@@ -103,26 +123,35 @@
     <!-- RESULTATS -->
     {% if results %}
         <div class="result-card">
-            <h4 class="mb-3"><i class="bi bi-fire text-warning"></i> Résultat de l'analyse</h4>
+            <h4 class="mb-3"><i class="bi bi-file-earmark-text text-warning"></i> Résultat de l'analyse</h4>
 
             {% if results[0].error %}
                 <p class="text-danger">{{ results[0].error }}</p>
 
             {% elif results|length == 0 %}
-                <p class="text-info"><b>Aucun feu détecté.</b> L’image est sûre.</p>
+                <p class="text-info"><b>Aucun feu détecté.</b></p>
 
             {% else %}
                 {% for r in results %}
-                    <p class="mb-1">
-                        🔥 <b>Feu détecté</b> — Confiance : 
+                    <p>🔥 <b>Feu détecté</b> — Confiance :
                         <span class="text-warning">{{ r.confidence * 100 }}%</span>
                     </p>
                 {% endfor %}
             {% endif %}
+
+            <!-- BUTTON PDF -->
+            <a href="/download_pdf?results={{ results }}&image={{ image_path }}"
+               class="btn btn-outline-warning w-100 mt-3">
+                📄 Télécharger le rapport PDF
+            </a>
         </div>
     {% endif %}
 
 </div>
+
+<footer>
+    Développé par FireVision • YOLOv8 MLOps • 2025
+</footer>
 
 <!-- JS Preview -->
 <script>
@@ -138,6 +167,7 @@
 
 </body>
 </html>
+
 
 
 <!-- <!DOCTYPE html>

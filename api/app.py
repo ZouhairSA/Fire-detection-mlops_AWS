@@ -1,4 +1,9 @@
-from flask import Flask, request, render_template
+from flask import Flask, send_file, request, render_template
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from datetime import datetime
+
 from ultralytics import YOLO
 import os
 
@@ -58,7 +63,33 @@ def index():
         results=result_data,
         image_path="static/input.jpg"
     )
+@app.route("/download_pdf")
+def download_pdf():
+    # PDF TEMPORAIRE
+    pdf_path = "/app/static/result.pdf"
 
+    # Données
+    results = request.args.get("results", "")
+    image_name = request.args.get("image", "input.jpg")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Génération PDF
+    c = canvas.Canvas(pdf_path, pagesize=A4)
+
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(120, 800, "🔥 Rapport Détection d'Incendie")
+
+    c.setFont("Helvetica", 12)
+    c.drawString(50, 760, f"Date : {now}")
+    c.drawString(50, 740, f"Image analysée : {image_name}")
+
+    c.drawString(50, 700, "Résultat de l'analyse :")
+    c.drawString(70, 680, results)
+
+    c.showPage()
+    c.save()
+
+    return send_file(pdf_path, as_attachment=True)
 
 # -------------------------------------------------------------------
 # Lancer l'application
