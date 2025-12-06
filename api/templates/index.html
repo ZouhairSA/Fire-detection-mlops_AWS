@@ -2,165 +2,191 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>🔥 Fire Detection Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>🔥 Fire Detection – Professional UI</title>
 
 <style>
 
-/* ----------------------------- */
+/* ------------------------- */
 /* GLOBAL */
-/* ----------------------------- */
+/* ------------------------- */
 
-body {
+body{
     margin:0;
-    background:#000;
-    color:white;
+    background:#ffffff;
+    color:#222;
     font-family: "Segoe UI", Arial;
 }
 
-/* container */
-.container {
-    width:90%;
-    margin:auto;
-    padding-top:30px;
+/* fade in animation */
+.fade{
+    animation: fadein 0.6s ease forwards;
 }
 
-/* titre */
-.title {
-    font-size:26px;
-    font-weight:600;
-    letter-spacing:1px;
+@keyframes fadein{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
 }
 
-/* ligne */
-.hr {
-    height:1px;
-    background:#222;
-    margin:20px 0;
-}
+/* ------------------------- */
+/* SIDEBAR Oracle style */
+/* ------------------------- */
 
-/* ----------------------------- */
-/* CARD */
-/* ----------------------------- */
-
-.card {
-    background:#111;
+.sidebar{
+    position:fixed;
+    left:0; top:0;
+    width:240px;
+    height:100vh;
+    background:#f5f5f5;
+    border-right:1px solid #ddd;
     padding:20px;
-    border-radius:12px;
-    box-shadow:0px 0px 12px #000;
-    border:1px solid #222;
 }
 
-/* ----------------------------- */
-/* INPUT */
-/* ----------------------------- */
+.sidebar h3{
+    margin-top:0;
+}
 
-input[type=file] {
-    background:#222;
+.sidebar a{
+    display:block;
     padding:10px;
-    border-radius:8px;
-    color:white;
+    margin:6px 0;
+    color:#333;
+    text-decoration:none;
+    border-radius:6px;
 }
 
-/* button */
-.btn {
-    padding:12px 20px;
-    border-radius:8px;
-    border:1px solid #444;
-    background:#000;
-    color:white;
+.sidebar a:hover{
+    background:#e8e8e8;
+}
+
+/* ------------------------- */
+/* MAIN */
+/* ------------------------- */
+
+.main{
+    margin-left:260px;
+    padding:30px;
+}
+
+.card{
+    background:#fafafa;
+    padding:20px;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
+.btn{
+    padding:10px 20px;
+    border-radius:6px;
+    border:1px solid #999;
+    background:#fff;
     cursor:pointer;
-    transition:0.3s;
 }
 
-.btn:hover {
-    background:#222;
+.btn:hover{
+    background:#eee;
 }
 
-/* image */
-.img {
-    max-width:380px;
-    border-radius:12px;
-    border:1px solid #333;
-    margin-top:10px;
+/* responsive */
+@media (max-width:800px){
+    .sidebar{position:relative; width:100%; height:auto;}
+    .main{margin-left:0;}
 }
 
-/* result */
-.result {
-    padding:10px;
-    background:#121212;
+.result{
     border-left:4px solid orange;
-    margin-top:10px;
-}
-
-/* link */
-a {
-    color:orange;
+    padding:10px;
+    background:#fff7e6;
 }
 
 </style>
 </head>
 <body>
 
-<div class="container">
+<!-- SIDEBAR -->
+<div class="sidebar fade">
 
-    <div class="title">🔥 Fire Detection – Professional Interface</div>
-    <div class="hr"></div>
+    <h3>🔥 FireVision</h3>
 
-    <div class="card">
-
-        <form method="POST" enctype="multipart/form-data">
-
-            <input type="file" name="image" required>
-            <br><br>
-
-            <button class="btn" type="submit">🚀 Analyse</button>
-
-        </form>
-
-    </div>
-
-    {% if results %}
-
-    <div class="hr"></div>
-
-    <div class="card">
-
-        <h3>📌 Résultats</h3>
-
-        {% if results[0].error %}
-            <div class="result">{{ results[0].error }}</div>
-
-        {% elif results|length == 0 %}
-            <div class="result">Aucun feu détecté</div>
-
-        {% else %}
-            {% for r in results %}
-                <div class="result">
-                    🔥 Feu détecté<br>
-                    Classe : <b>{{ r.class }}</b><br>
-                    Confiance : <b>{{ r.confidence*100 }}%</b>
-                </div>
-            {% endfor %}
-        {% endif %}
-
-    </div>
-
-    <div class="card">
-
-        <h3>🖼 Image originale</h3>
-        <img src="{{ image_path }}" class="img">
-
-        <h3>🖼 Image annotée</h3>
-        <img src="{{ annotated }}" class="img">
-
-        <br><br>
-        <a href="/download_pdf?results={{results}}&image=input.jpg">📄 Télécharger rapport PDF</a>
-
-    </div>
-
-    {% endif %}
+    <a href="#" onclick="show('analyse')">Analyse</a>
+    <a href="#" onclick="show('rapport')">Rapport</a>
 
 </div>
+
+
+<!-- MAIN -->
+<div class="main fade">
+
+<!-- ANALYSE -->
+<div id="analyse" class="section active">
+
+<h2>Analyse d’incendie</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+    <input type="file" name="image" required>
+    <br><br>
+
+    <button class="btn" type="submit">🚀 Lancer Analyse</button>
+
+</form>
+
+
+{% if results %}
+
+<br>
+
+<div class="card">
+
+<h3>Résultats</h3>
+
+{% if results[0].error %}
+    <div class="result">{{ results[0].error }}</div>
+{% elif results|length == 0 %}
+    <div class="result">Aucun feu détecté</div>
+{% else %}
+    {% for r in results %}
+        <div class="result">
+            🔥 Feu détecté<br>
+            Classe : <b>{{ r.class }}</b><br>
+            Confiance : <b>{{ r.confidence*100 }}%</b>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<br>
+<a href="/download_pdf?results={{results}}&image=input.jpg">📄 Télécharger PDF</a>
+
+</div>
+
+{% endif %}
+
+</div>
+
+
+<!-- RAPPORT -->
+<div id="rapport" class="section">
+
+<h2>📄 Rapport du système</h2>
+<p>
+Le système FireVision détecte automatiquement les feux à partir d’images
+en utilisant un modèle YOLO haute précision.
+</p>
+
+</div>
+
+</div>
+
+
+<script>
+function show(id){
+    document.querySelectorAll('.section')
+        .forEach(s => s.classList.remove('active'));
+
+    document.getElementById(id).classList.add('active');
+}
+</script>
 
 </body>
 </html>
