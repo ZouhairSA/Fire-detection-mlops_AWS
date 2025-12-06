@@ -6,6 +6,8 @@ torchvision==0.18.1+cpu
 opencv-python-headless==4.10.0.84
 pillow==10.4.0
 gunicorn==22.0.0
+reportlab
+
 
 
 
