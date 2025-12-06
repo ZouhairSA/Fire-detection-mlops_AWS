@@ -1,6 +1,11 @@
-from api.app import app
+import os
+import sys
 
-def test_flask_app_exists():
+# Ajouter la racine du repo au PATH
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+def test_flask_app():
+    from api.app import app
     assert app is not None
 
 
