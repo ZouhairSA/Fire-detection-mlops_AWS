@@ -2,70 +2,165 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>🔥 Fire Detection</title>
+<title>🔥 Fire Detection Pro</title>
+
 <style>
+
+/* ----------------------------- */
+/* GLOBAL */
+/* ----------------------------- */
+
 body {
+    margin:0;
     background:#000;
     color:white;
-    font-family:Arial;
+    font-family: "Segoe UI", Arial;
 }
-.preview-img {
-    max-width:400px;
-    border-radius:10px;
+
+/* container */
+.container {
+    width:90%;
+    margin:auto;
+    padding-top:30px;
+}
+
+/* titre */
+.title {
+    font-size:26px;
+    font-weight:600;
+    letter-spacing:1px;
+}
+
+/* ligne */
+.hr {
+    height:1px;
+    background:#222;
+    margin:20px 0;
+}
+
+/* ----------------------------- */
+/* CARD */
+/* ----------------------------- */
+
+.card {
+    background:#111;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0px 0px 12px #000;
+    border:1px solid #222;
+}
+
+/* ----------------------------- */
+/* INPUT */
+/* ----------------------------- */
+
+input[type=file] {
+    background:#222;
+    padding:10px;
+    border-radius:8px;
+    color:white;
+}
+
+/* button */
+.btn {
+    padding:12px 20px;
+    border-radius:8px;
+    border:1px solid #444;
+    background:#000;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn:hover {
+    background:#222;
+}
+
+/* image */
+.img {
+    max-width:380px;
+    border-radius:12px;
+    border:1px solid #333;
     margin-top:10px;
 }
-button {
+
+/* result */
+.result {
     padding:10px;
-    background:orange;
-    border:none;
-    border-radius:8px;
+    background:#121212;
+    border-left:4px solid orange;
+    margin-top:10px;
 }
+
+/* link */
+a {
+    color:orange;
+}
+
 </style>
 </head>
 <body>
 
-<h2>🔥 Détection d’incendie YOLO</h2>
+<div class="container">
 
-<form method="POST" enctype="multipart/form-data">
-    <input type="file" name="image" required>
-    <br><br>
-    <button type="submit">Analyser</button>
-</form>
+    <div class="title">🔥 Fire Detection – Professional Interface</div>
+    <div class="hr"></div>
 
-{% if results %}
+    <div class="card">
 
-<hr>
+        <form method="POST" enctype="multipart/form-data">
 
-<h3>✅ Résultat</h3>
+            <input type="file" name="image" required>
+            <br><br>
 
-{% if results[0].error %}
-<p>{{ results[0].error }}</p>
-{% elif results|length == 0 %}
-<p>Aucun feu détecté.</p>
-{% else %}
-{% for r in results %}
-<p>🔥 Feu détecté — confiance : <b>{{ r.confidence*100 }}%</b></p>
-{% endfor %}
-{% endif %}
+            <button class="btn" type="submit">🚀 Analyse</button>
 
-<!-- image originale -->
-{% if image_path %}
-<h4>Image originale</h4>
-<img src="{{ image_path }}" class="preview-img">
-{% endif %}
+        </form>
 
-<!-- image annotée -->
-{% if annotated %}
-<h4>Image annotée</h4>
-<img src="{{ annotated }}" class="preview-img">
-{% endif %}
+    </div>
 
-<br><br>
-<a href="/download_pdf?results={{results}}&image=input.jpg">
-    📄 Télécharger rapport PDF
-</a>
+    {% if results %}
 
-{% endif %}
+    <div class="hr"></div>
+
+    <div class="card">
+
+        <h3>📌 Résultats</h3>
+
+        {% if results[0].error %}
+            <div class="result">{{ results[0].error }}</div>
+
+        {% elif results|length == 0 %}
+            <div class="result">Aucun feu détecté</div>
+
+        {% else %}
+            {% for r in results %}
+                <div class="result">
+                    🔥 Feu détecté<br>
+                    Classe : <b>{{ r.class }}</b><br>
+                    Confiance : <b>{{ r.confidence*100 }}%</b>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    </div>
+
+    <div class="card">
+
+        <h3>🖼 Image originale</h3>
+        <img src="{{ image_path }}" class="img">
+
+        <h3>🖼 Image annotée</h3>
+        <img src="{{ annotated }}" class="img">
+
+        <br><br>
+        <a href="/download_pdf?results={{results}}&image=input.jpg">📄 Télécharger rapport PDF</a>
+
+    </div>
+
+    {% endif %}
+
+</div>
 
 </body>
 </html>
