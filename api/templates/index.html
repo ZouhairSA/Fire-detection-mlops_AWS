@@ -43,17 +43,18 @@
         }
         /* Camera popup */
         #cameraModal {
-            display:none; 
-            position:fixed; 
-            top:0; left:0; 
+            display:none;
+            position:fixed;
+            top:0; left:0;
             width:100%; height:100%;
-            background:rgba(0,0,0,.8); 
-            padding-top:50px; 
-            text-align:center; 
+            background:rgba(0,0,0,.85);
+            padding-top:50px;
+            text-align:center;
             z-index:9999;
         }
         #cameraStream {
-            width:60%; 
+            width:90%;
+            max-width:450px;
             border-radius:10px;
         }
     </style>
@@ -65,7 +66,7 @@
 
     <form method="POST" enctype="multipart/form-data">
 
-        <!-- Upload -->
+        <!-- Upload Box -->
         <label class="upload-box w-100" id="uploadArea">
             <i class="bi bi-cloud-upload fs-1"></i>
             <p>Cliquez pour choisir une image</p>
@@ -77,24 +78,24 @@
             📷 Prendre une photo
         </button>
 
-        <!-- Zone Preview -->
+        <!-- Preview -->
         <div id="preview-container">
             <i class="bi bi-x-circle delete-icon" id="deleteImage" onclick="removeImage()"></i>
             <img id="preview" class="preview-img">
         </div>
 
-        <!-- Caméra -->
+        <!-- Caméra Modal -->
         <div id="cameraModal">
-            <video id="cameraStream" autoplay></video>
-            <br><br>
+            <video id="cameraStream" autoplay playsinline></video>
 
-            <button class="btn btn-success" onclick="capturePhoto()">📸 Capturer</button>
-            <button class="btn btn-danger" onclick="closeCamera()">❌ Fermer</button>
+            <br><br>
+            <button type="button" class="btn btn-success" onclick="capturePhoto()">📸 Capturer</button>
+            <button type="button" class="btn btn-danger" onclick="closeCamera()">❌ Fermer</button>
 
             <canvas id="cameraCanvas" style="display:none;"></canvas>
         </div>
 
-        <!-- Image base64 -->
+        <!-- Hidden input for base64 -->
         <input type="hidden" name="camera_image" id="camera_image">
 
         <button class="btn btn-primary w-100 mt-3">Analyser</button>
@@ -119,10 +120,9 @@
     const previewContainer = document.getElementById("preview-container");
     const deleteIcon = document.getElementById("deleteImage");
 
-    // CLICK → ouvre l’input
+    // Upload
     document.getElementById("uploadArea").onclick = () => imageInput.click();
 
-    // Upload image
     imageInput.addEventListener("change", function() {
         if (this.files && this.files[0]) {
             let imgUrl = URL.createObjectURL(this.files[0]);
@@ -130,36 +130,42 @@
         }
     });
 
-    // Affiche la preview
     function showPreview(src) {
         preview.src = src;
         previewContainer.style.display = "block";
         deleteIcon.style.display = "block";
     }
 
-    // Supprimer image
     function removeImage() {
         imageInput.value = "";
         previewContainer.style.display = "none";
         preview.src = "";
         deleteIcon.style.display = "none";
+        document.getElementById("camera_image").value = "";
     }
 
-    // ------------------------------
-    // CAMERA SYSTEM
-    // ------------------------------
+    // -----------------------
+    // CAMERA SYSTEM FIXED
+    // -----------------------
 
     let stream;
 
     function openCamera() {
         document.getElementById("cameraModal").style.display = "block";
 
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(s => {
-                stream = s;
-                document.getElementById("cameraStream").srcObject = stream;
-            })
-            .catch(err => alert("Erreur caméra : " + err));
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "environment"  // Utilise la caméra arrière mobile
+            }
+        })
+        .then(s => {
+            stream = s;
+            document.getElementById("cameraStream").srcObject = stream;
+        })
+        .catch(err => {
+            alert("⚠️ Autorisez la caméra !\n" + err);
+            closeCamera();
+        });
     }
 
     function capturePhoto() {
@@ -174,7 +180,6 @@
 
         let dataURL = canvas.toDataURL("image/png");
 
-        // Pour le backend
         document.getElementById("camera_image").value = dataURL;
 
         showPreview(dataURL);
@@ -189,6 +194,7 @@
 
 </body>
 </html>
+
 
 
 
