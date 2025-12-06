@@ -1,4 +1,3 @@
-# =========== Dockerfile optimisé pour ton projet ===========
 FROM python:3.10-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,36 +6,74 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Dépendances système (obligatoires pour Ultralytics + OpenCV)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Installer Python deps (Torch CPU + Ultralytics)
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir --timeout=1000 -r requirements.txt \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Copier ton API Flask
 COPY api/ api/
-
-# Copier le modèle
 COPY model/ model/
+COPY templates/ templates/
+COPY static/ static/
 
-# Copier les templates HTML
-COPY api/templates/ api/templates/
-
-# Créer dossier static automatiquement
 RUN mkdir -p static
 
 EXPOSE 5000
 
-# Utilisateur non-root (sécurité)
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser
 
 CMD ["python", "api/app.py"]
+
+
+
+
+
+
+# # =========== Dockerfile optimisé pour ton projet ===========
+# FROM python:3.10-slim
+
+# ENV DEBIAN_FRONTEND=noninteractive
+# ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONUNBUFFERED=1
+
+# WORKDIR /app
+
+# # Dépendances système (obligatoires pour Ultralytics + OpenCV)
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     libgl1-mesa-glx \
+#     libglib2.0-0 \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Installer Python deps (Torch CPU + Ultralytics)
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir --timeout=1000 -r requirements.txt \
+#     --extra-index-url https://download.pytorch.org/whl/cpu
+
+# # Copier ton API Flask
+# COPY api/ api/
+
+# # Copier le modèle
+# COPY model/ model/
+
+# # Copier les templates HTML
+# COPY api/templates/ api/templates/
+
+# # Créer dossier static automatiquement
+# RUN mkdir -p static
+
+# EXPOSE 5000
+
+# # Utilisateur non-root (sécurité)
+# RUN adduser --disabled-password --gecos '' appuser
+# USER appuser
+
+# CMD ["python", "api/app.py"]
 
 
 
