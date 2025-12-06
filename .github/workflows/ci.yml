@@ -2,37 +2,34 @@ name: CI - Test & Docker Build
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [ master ]
   pull_request:
-    branches: ["main", "master"]
+    branches: [ master ]
 
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout du code
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-    # Installation de Python
-    - name: Set up Python
+    # Installer Python et pip
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: 3.10
 
-    # Installation des dépendances
+    # Installer dépendances
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pytest
 
-    # Exécution des tests unitaires
-    - name: Run tests
-      run: |
-        pytest -q
+    # Lancer les tests
+    - name: Run pytest
+      run: pytest -q
 
     # Build Docker
     - name: Build Docker image
-      run: |
-        docker build -t fire-api -f docker/Dockerfile .
+      run: docker build -t fire-api .
