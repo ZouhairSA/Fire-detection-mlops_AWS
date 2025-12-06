@@ -4,14 +4,23 @@ import os
 
 app = Flask(__name__)
 
-# chemin du modèle
+# -------------------------------------------------------------------
+# Chemin absolu du modèle (fonctionne partout : PC, Docker, EC2)
+# -------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.abspath(os.path.join(BASE_DIR, "../model/best.pt"))
 
-# load
+print("MODEL PATH =", model_path)
+print("EXISTS =", os.path.exists(model_path))
+
+# Charger le modèle YOLO
+# device="cpu" évite les erreurs CUDA sur EC2
 model = YOLO(model_path, device="cpu")
 
 
+# -------------------------------------------------------------------
+# Route principale
+# -------------------------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     result_data = None
@@ -20,8 +29,10 @@ def index():
     if request.method == "POST":
         if "image" not in request.files:
             result_data = {"error": "No image uploaded"}
+
         else:
             file = request.files["image"]
+
             image_path = "static/input.jpg"
             file.save(image_path)
 
@@ -39,11 +50,16 @@ def index():
 
             result_data = detections
 
-    return render_template("index.html",
-                           results=result_data,
-                           image_path=image_path)
+    return render_template(
+        "index.html",
+        results=result_data,
+        image_path=image_path
+    )
 
 
+# -------------------------------------------------------------------
+# Lancer l'application
+# -------------------------------------------------------------------
 if __name__ == "__main__":
     os.makedirs("static", exist_ok=True)
     app.run(host="0.0.0.0", port=5000)
