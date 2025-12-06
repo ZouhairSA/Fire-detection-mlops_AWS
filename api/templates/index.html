@@ -1,169 +1,145 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🔥 Détection d’Incendie – IA YOLO</title>
+<meta charset="UTF-8">
+<title>Fire Detection Dashboard</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            background: linear-gradient(135deg, #0d1117, #1b1f24);
-            color: white;
-            min-height: 100vh;
-            padding-top: 80px;
-        }
+<style>
+body {
+    background:#f2f4f7;
+}
 
-        /* NAVBAR */
-        .navbar {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(10px);
-        }
+.sidebar {
+    height:100vh;
+    background:#1e3d66;
+    color:white;
+    padding-top:20px;
+}
 
-        .app-container {
-            max-width: 850px;
-            margin: auto;
-            padding: 40px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 40px rgba(255, 100, 0, 0.3);
-            animation: fadeIn 0.9s ease-in-out;
-        }
+.sidebar a {
+    color:white;
+    text-decoration:none;
+    display:block;
+    padding:12px;
+}
 
-        .upload-box {
-            border: 2px dashed #ff7b00;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .upload-box:hover {
-            background: rgba(255, 120, 0, 0.12);
-            transform: scale(1.02);
-        }
+.sidebar a:hover {
+    background:#163252;
+}
 
-        .preview-img {
-            max-width: 100%;
-            border-radius: 15px;
-            margin-top: 20px;
-            display: none;
-        }
+.topbar {
+    background:white;
+    padding:10px 20px;
+    border-bottom:1px solid #ddd;
+}
 
-        .result-card {
-            background: #161b22;
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 20px;
-            border-left: 4px solid #ff7b00;
-            animation: slideUp 0.5s ease-out;
-        }
+.card {
+    border-radius:12px;
+}
 
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            padding: 20px;
-            color: #aaa;
-            font-size: 14px;
-        }
+.result-box {
+    background:white;
+    padding:20px;
+    border-radius:12px;
+}
 
-        @keyframes fadeIn {
-            from {opacity: 0; transform: translateY(20px);}
-            to   {opacity: 1; transform: translateY(0);}
-        }
-        @keyframes slideUp {
-            from {opacity: 0; transform: translateY(10px);}
-            to   {opacity: 1; transform: translateY(0);}
-        }
-    </style>
+.preview-img {
+    max-width:100%;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
+</style>
 </head>
-
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-dark fixed-top px-4">
-    <a class="navbar-brand fw-bold text-warning" href="#">
-        <i class="bi bi-fire"></i> FireVision AI
-    </a>
-</nav>
+<div class="container-fluid">
+
+<div class="row">
+
+    <!-- SIDEBAR -->
+    <div class="col-2 sidebar">
+
+        <h5 class="text-center">🔥 Fire Detection</h5>
+        <hr class="bg-white">
+
+        <a href="#">Dashboard</a>
+        <a href="#">Upload Image</a>
+        <a href="#">History</a>
+        <a href="#">Generate PDF</a>
+        <a href="#">Settings</a>
+
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="col-10">
+
+        <!-- TOPBAR -->
+        <div class="topbar d-flex justify-content-between">
+
+            <h5>Dashboard</h5>
+
+            <div>
+                <button class="btn btn-sm btn-outline-primary">Dark Mode</button>
+                <button class="btn btn-sm btn-outline-success">Profile</button>
+            </div>
+
+        </div>
+
+        <div class="p-3">
+
+            <div class="card p-3 mb-3">
+
+                <h6>📷 Upload Image</h6>
+
+                <form action="/" method="POST" enctype="multipart/form-data">
+
+                    <input type="file" name="image" class="form-control mb-3">
+
+                    <button class="btn btn-primary">Detect Fire</button>
+
+                </form>
+
+            </div>
 
 
-<div class="app-container">
+            {% if result %}
 
-    <h1 class="text-center mb-3">
-        🔥 <b>Détection d’incendie IA</b>
-    </h1>
-    <p class="text-center text-white-50 mb-4">
-        Analyse automatique avec YOLO — Rapide et ultra précis
-    </p>
+            <div class="result-box mb-3">
 
-    <!-- FORMULAIRE -->
-    <form method="POST" enctype="multipart/form-data">
+                <h6>✅ Resultat :</h6>
 
-        <label class="upload-box" id="uploadBox">
-            <i class="bi bi-cloud-arrow-up fs-1 text-warning"></i>
-            <h5 class="mt-3">Cliquez ici pour importer une image</h5>
-            <p class="text-white-50 mb-0">Formats supportés : JPG, PNG</p>
-            <input type="file" name="image" id="imageInput" class="d-none" accept="image/*" required>
-        </label>
+                <h3>{{ result }}</h3>
 
-        <img id="previewImage" class="preview-img">
+                <hr>
 
-        <button class="btn btn-warning w-100 mt-4 py-2 fs-5">
-            🚀 Analyser l'image
-        </button>
-    </form>
+                <p>Image : {{ filename }}</p>
 
-    <!-- RESULTATS -->
-    {% if results %}
-        <div class="result-card">
-            <h4 class="mb-3"><i class="bi bi-file-earmark-text text-warning"></i> Résultat de l'analyse</h4>
+                <a href="/download/{{ filename }}" class="btn btn-danger">Télécharger PDF</a>
 
-            {% if results[0].error %}
-                <p class="text-danger">{{ results[0].error }}</p>
+            </div>
 
-            {% elif results|length == 0 %}
-                <p class="text-info"><b>Aucun feu détecté.</b></p>
+            <div class="card p-3">
 
-            {% else %}
-                {% for r in results %}
-                    <p>🔥 <b>Feu détecté</b> — Confiance :
-                        <span class="text-warning">{{ r.confidence * 100 }}%</span>
-                    </p>
-                {% endfor %}
+                <h6>🖼 Image analysée</h6>
+
+                <img src="/static/{{ filename }}" class="preview-img">
+
+            </div>
+
             {% endif %}
 
-            <!-- BUTTON PDF -->
-            <a href="/download_pdf?results={{ results }}&image={{ image_path }}"
-               class="btn btn-outline-warning w-100 mt-3">
-                📄 Télécharger le rapport PDF
-            </a>
         </div>
-    {% endif %}
+
+    </div>
 
 </div>
 
-<footer>
-    Développé par FireVision • YOLOv8 MLOps • 2025
-</footer>
-
-<!-- JS Preview -->
-<script>
-    const input = document.getElementById("imageInput");
-    const preview = document.getElementById("previewImage");
-
-    input.addEventListener("change", () => {
-        const file = input.files[0];
-        preview.src = URL.createObjectURL(file);
-        preview.style.display = "block";
-    });
-</script>
+</div>
 
 </body>
 </html>
